@@ -1,19 +1,26 @@
-# API Contract — Initial Backend
+# API Contract — PhishGuard-AR Backend
 
-## Health
+## 1. System Health
 
-`GET /health`
+### `GET /health`
+Public health status check.
 
-Response:
-
+**Response (200 OK):**
 ```json
-{"status": "ok", "service": "phishguard-api"}
+{
+  "service": "phishguard-api",
+  "status": "ok"
+}
 ```
 
-## Register
+---
 
-`POST /api/auth/register`
+## 2. Authentication
 
+### `POST /api/auth/register`
+Register a new analyst account.
+
+**Request:**
 ```json
 {
   "name": "Demo User",
@@ -22,26 +29,147 @@ Response:
 }
 ```
 
-## Login
+**Response (201 Created):**
+```json
+{
+  "message": "registered successfully",
+  "user_id": 1
+}
+```
 
-`POST /api/auth/login`
+### `POST /api/auth/login`
+Authenticate with email and password.
 
-Returns access and refresh tokens.
+**Request:**
+```json
+{
+  "email": "demo@example.com",
+  "password": "minimum-8-chars"
+}
+```
 
-## Scan
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGci...",
+  "refresh_token": "eyJhbGci..."
+}
+```
 
-`POST /api/scan`
+### `POST /api/auth/refresh`
+Exchange a valid refresh token for a fresh access token.
 
-Requires:
+**Headers:**
+```text
+Authorization: Bearer <refresh_token>
+```
 
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGci..."
+}
+```
+
+---
+
+## 3. Threat Scanning & History
+
+### `POST /api/scan`
+Submit text for phishing analysis.
+
+**Headers:**
+```text
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request:**
+```json
+{
+  "text": "Urgent: verify your account security credentials immediately."
+}
+```
+
+**Response (Until Person A integrates model bundle — 503 Service Unavailable):**
+```json
+{
+  "error": "model_unavailable",
+  "message": "ML model is not available. Wait for Person A's model bundle."
+}
+```
+
+**Response (When model is active — 200 OK):**
+```json
+{
+  "scan_id": 1,
+  "verdict": "malicious",
+  "threat_type": "phishing",
+  "score": 0.94,
+  "score_type": "probability",
+  "model_version": "v1.0"
+}
+```
+
+### `GET /api/scans`
+List scan records submitted by the authenticated user (newest first).
+
+**Headers:**
 ```text
 Authorization: Bearer <access_token>
 ```
 
-Request:
+**Query Parameters:**
+- `limit` (default: 50, max: 100)
+- `offset` (default: 0)
 
+**Response (200 OK):**
 ```json
-{"text": "Suspicious message text"}
+{
+  "scans": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "text": "Sample text",
+      "verdict": "malicious",
+      "threat_type": "phishing",
+      "score": 0.94,
+      "score_type": "probability",
+      "model_version": "v1.0",
+      "created_at": "2026-09-18T08:30:00+00:00"
+    }
+  ],
+  "count": 1
+}
 ```
 
-Until Person A supplies the model bundle, this endpoint returns `503 model_unavailable`.
+### `GET /api/scans/<scan_id>`
+Retrieve a specific scan record owned by the authenticated user.
+
+**Headers:**
+```text
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "text": "Sample text",
+  "verdict": "malicious",
+  "threat_type": "phishing",
+  "score": 0.94,
+  "score_type": "probability",
+  "model_version": "v1.0",
+  "created_at": "2026-09-18T08:30:00+00:00"
+}
+```
+
+**Error (404 Not Found):**
+```json
+{
+  "error": "not_found",
+  "message": "Scan 1 was not found or access is denied."
+}
+```

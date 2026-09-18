@@ -1,13 +1,35 @@
+# Virtual environment & caches
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.env
-credentials.json
-token.json
-*.db
-models/*.pkl
-data/raw/
-data/processed/
 instance/
 .vscode/
+
+# Environment and secrets (Never commit!)
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+*.pem
+*.key
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Model artifacts & weights (Person A deliverables)
+models/*.pkl
+*.pkl
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Datasets
+data/raw/
+data/processed/

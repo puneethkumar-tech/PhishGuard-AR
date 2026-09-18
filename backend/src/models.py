@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from .extensions import db
 
 class User(db.Model):
+    __tablename__ = "user"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
@@ -9,7 +11,20 @@ class User(db.Model):
     role = db.Column(db.String(30), nullable=False, default="analyst")
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    scans = db.relationship("Scan", backref="user", lazy="dynamic", cascade="all, delete-orphan")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "role": self.role,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
 class Scan(db.Model):
+    __tablename__ = "scan"
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     text = db.Column(db.Text, nullable=False)
@@ -19,3 +34,16 @@ class Scan(db.Model):
     score_type = db.Column(db.String(40), nullable=True)
     model_version = db.Column(db.String(80), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "text": self.text,
+            "verdict": self.verdict,
+            "threat_type": self.threat_type,
+            "score": self.score,
+            "score_type": self.score_type,
+            "model_version": self.model_version,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
