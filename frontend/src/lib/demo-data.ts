@@ -344,6 +344,14 @@ export const DEMO_SEARCH_ITEMS: SearchItem[] = [
     badge: "Reports",
   },
   {
+    id: "search-5b",
+    title: "SOC Alert Center & Event Stream",
+    category: "Navigation",
+    description: "Review simulated security incidents, acknowledgements & SOC telemetry",
+    href: "/alerts",
+    badge: "Alerts",
+  },
+  {
     id: "search-6",
     title: "Platform Configuration",
     category: "Navigation",
@@ -360,6 +368,30 @@ export const DEMO_SEARCH_ITEMS: SearchItem[] = [
     badge: "Adversarial",
   },
   {
+    id: "search-7b",
+    title: "PHG-0001 — Microsoft 365 Credential Harvester",
+    category: "Threat Vector",
+    description: "Forensic record PHG-0001: high-urgency credential harvesting spoofing login portal",
+    href: "/history",
+    badge: "PHG-0001",
+  },
+  {
+    id: "search-7c",
+    title: "PHG-0002 — PayPal Cyrillic Homoglyph Evasion",
+    category: "Threat Vector",
+    description: "Forensic record PHG-0002: Unicode Cyrillic small letter a confusable attack",
+    href: "/history",
+    badge: "PHG-0002",
+  },
+  {
+    id: "search-7d",
+    title: "PHG-0003 — CEO Wire Transfer BEC",
+    category: "Threat Vector",
+    description: "Forensic record PHG-0003: Executive impersonation & financial routing diversion",
+    href: "/history",
+    badge: "PHG-0003",
+  },
+  {
     id: "search-8",
     title: "Zero-Width Space Obfuscation",
     category: "Threat Vector",
@@ -372,7 +404,7 @@ export const DEMO_SEARCH_ITEMS: SearchItem[] = [
     title: "Multilingual DistilBERT Transformer",
     category: "Model Architecture",
     description: "104-language contextual transformer capturing semantic coercion intents",
-    href: "/home",
+    href: "/dashboard/intelligence",
     badge: "AI Engine",
   },
   {
@@ -380,7 +412,7 @@ export const DEMO_SEARCH_ITEMS: SearchItem[] = [
     title: "TF-IDF + Linear SVM Baseline",
     category: "Model Architecture",
     description: "High-throughput statistical n-gram classifier baseline (~2.4ms latency)",
-    href: "/home",
+    href: "/dashboard/intelligence",
     badge: "AI Engine",
   },
 ];

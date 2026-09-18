@@ -9,6 +9,7 @@ import {
   History,
   FileText,
   Settings,
+  Bell,
   ArrowRight,
 } from 'lucide-react';
 
@@ -40,15 +41,23 @@ export const DashboardQuickActions: React.FC = () => {
     },
     {
       title: 'Intelligence Reports',
-      desc: 'Access executive STIX & forensic dossiers',
+      desc: 'Generate & export forensic STIX dossiers',
       href: '/reports',
       icon: FileText,
       color: 'text-cyber-warning',
       bg: 'bg-cyber-warning/20',
     },
     {
-      title: 'System & Security Settings',
-      desc: 'Calibrate sensitivity & protection modes',
+      title: 'SOC Alert Center',
+      desc: 'Review incident feed & status timeline',
+      href: '/alerts',
+      icon: Bell,
+      color: 'text-red-400',
+      bg: 'bg-red-500/20',
+    },
+    {
+      title: 'Platform Settings',
+      desc: 'Calibrate preferences & simulation sandbox',
       href: '/settings',
       icon: Settings,
       color: 'text-text-muted',
@@ -65,7 +74,7 @@ export const DashboardQuickActions: React.FC = () => {
         <span className="text-[10px] font-mono text-text-muted">DIRECT ROUTING</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {actions.map((act) => {
           const Icon = act.icon;
 

@@ -9,7 +9,7 @@ export const BRAND = {
   name: "PHISHGUARD-AR",
   tagline: "Detect · Analyze · Resist · Stay Safe",
   shortDesc: "AI-Powered Adversarially Robust Cybersecurity Defense Platform",
-  version: "Phase 4 (AI Threat Scanner & AI Robot)",
+  version: "Phase 9 (History · Reports · Alerts · Settings)",
 };
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -49,6 +49,13 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Live threat telemetry & metrics",
         section: "AI SECURITY",
       },
+      {
+        name: "AI Intelligence",
+        href: "/dashboard/intelligence",
+        icon: "Cpu",
+        description: "Deep neural network & explainability",
+        section: "AI SECURITY",
+      },
     ],
   },
   {
@@ -66,6 +73,13 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/reports",
         icon: "FileText",
         description: "Export intelligence & forensic reports",
+        section: "INTELLIGENCE",
+      },
+      {
+        name: "Alerts",
+        href: "/alerts",
+        icon: "Bell",
+        description: "Simulated SOC incident alerts & feed",
         section: "INTELLIGENCE",
       },
     ],

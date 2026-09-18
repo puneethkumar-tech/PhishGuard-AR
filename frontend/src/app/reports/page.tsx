@@ -1,218 +1,155 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Badge } from '@/components/ui/Badge';
-import { GlowButton } from '@/components/ui/GlowButton';
+import { ReportDashboardMetrics } from '@/components/reports/ReportDashboardMetrics';
+import { ReportGenerator } from '@/components/reports/ReportGenerator';
+import { ReportPreview } from '@/components/reports/ReportPreview';
+import { ReportTable } from '@/components/reports/ReportTable';
+import { SimulatedExportModal } from '@/components/reports/SimulatedExportModal';
+import { EmptyState } from '@/components/ui/States';
 import {
-  FileText,
-  Download,
-  Share2,
-  Shield,
-  Calendar,
-  CheckCircle2,
-  Layers,
-  ArrowUpRight,
-  X,
-  FileCheck,
-  Check,
-} from 'lucide-react';
-import { DEMO_REPORTS } from '@/lib/demo-data';
-import { ReportDossier } from '@/types';
+  getStoredReports,
+  deleteReportRecord,
+  addReportRecord,
+  restoreDefaultReports,
+  clearReports,
+} from '@/lib/storage';
+import { ReportRecord } from '@/types';
 
 export default function ReportsPage() {
-  const [selectedReport, setSelectedReport] = useState<ReportDossier | null>(null);
-  const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [reports, setReports] = useState<ReportRecord[]>([]);
+  const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(null);
+  const [exportReport, setExportReport] = useState<ReportRecord | null>(null);
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSimulateDownload = (reportTitle: string) => {
-    setDownloadSuccess(reportTitle);
-    setTimeout(() => setDownloadSuccess(null), 3500);
+  // Load stored reports
+  useEffect(() => {
+    setReports(getStoredReports());
+  }, []);
+
+  const handleSeedDefaults = () => {
+    const defaults = restoreDefaultReports();
+    setReports(defaults);
   };
+
+  const handleDeleteReport = (id: string) => {
+    const updated = deleteReportRecord(id);
+    setReports(updated);
+    if (selectedReport?.id === id) {
+      setSelectedReport(null);
+    }
+  };
+
+  const handleDuplicateReport = (report: ReportRecord) => {
+    const duplicated: ReportRecord = {
+      ...report,
+      id: `RPT-${new Date().getFullYear()}-${Math.floor(1000 + (Date.now() % 9000))}`,
+      title: `${report.title} (Copy)`,
+      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    };
+    const updated = addReportRecord(duplicated);
+    setReports(updated);
+  };
+
+  const filteredReports = reports.filter((r) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      r.id.toLowerCase().includes(q) ||
+      r.title.toLowerCase().includes(q) ||
+      r.sourceLabel.toLowerCase().includes(q) ||
+      r.verdict.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <PageContainer>
-      {/* 1. Page Header */}
-      <PageHeader
-        eyebrow="INTELLIGENCE REPORTS"
-        title="Threat Intelligence & Forensic Reports"
-        description="Comprehensive summary dossiers, adversarial robustness evaluation briefs, and structured STIX/JSON export packages."
-        statusBadge={{ label: "Dossiers Ready", variant: "cyan", dot: true }}
-      />
+      <div className="space-y-6">
+        {/* 1. Header & Metrics */}
+        <ReportDashboardMetrics
+          reports={reports}
+          onOpenGenerator={() => setIsGeneratorOpen(true)}
+          onSeedDefaults={handleSeedDefaults}
+        />
 
-      {/* 2. Download Feedback Banner */}
-      <AnimatePresence>
-        {downloadSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="p-4 rounded-2xl bg-cyber-success/15 border border-cyber-success/40 text-cyber-success flex items-center justify-between text-xs font-mono"
-          >
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4" />
-              <span>Demo Export Bundle Prepared: &quot;{downloadSuccess}&quot;</span>
-            </div>
-            <span className="text-[10px] text-cyber-success/80">Phase 2 Simulation</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 3. Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {DEMO_REPORTS.map((report) => (
-          <GlassCard key={report.id} className="p-6 flex flex-col justify-between group">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-xl bg-primary/20 text-primary-bright group-hover:bg-primary/30 transition-colors">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <Badge
-                  variant={
-                    report.status === 'VERIFIED'
-                      ? 'success'
-                      : report.status === 'ACTIVE BENCHMARK'
-                      ? 'violet'
-                      : 'primary'
-                  }
-                  size="sm"
-                >
-                  {report.status}
-                </Badge>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-mono text-cyber-cyan uppercase tracking-wider block">
-                  {report.category}
-                </span>
-                <h3 className="text-base font-bold text-text mt-1 leading-snug">
-                  {report.title}
-                </h3>
-                <p className="text-xs text-text-muted mt-2 leading-relaxed line-clamp-3">
-                  {report.summary}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-surface-2/80 border border-border text-xs space-y-1">
-                <div className="flex justify-between text-text-muted">
-                  <span>Samples Evaluated:</span>
-                  <span className="font-mono text-text font-bold">{report.samplesAnalyzed.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-text-muted">
-                  <span>Metric / Score:</span>
-                  <span className="font-mono text-cyber-cyan font-bold">{report.threatScore}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-5 mt-4 border-t border-border/60 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-text-muted font-mono">{report.date}</span>
-
-              <div className="flex items-center gap-2">
-                <GlowButton
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setSelectedReport(report)}
-                >
-                  View Details
-                </GlowButton>
-
-                <button
-                  onClick={() => handleSimulateDownload(report.title)}
-                  className="p-2 rounded-xl bg-surface-2 text-text-muted hover:text-text hover:bg-surface-3 border border-border transition-colors"
-                  title="Simulate Download Export"
-                >
-                  <Download className="w-4 h-4 text-cyber-cyan" />
-                </button>
-              </div>
-            </div>
-          </GlassCard>
-        ))}
-      </div>
-
-      {/* 4. Report Detail Modal */}
-      <AnimatePresence>
-        {selectedReport && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedReport(null)}
-              className="fixed inset-0 bg-background/80 backdrop-blur-md"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-2xl rounded-2xl bg-surface/95 border border-border shadow-2xl p-6 sm:p-8 backdrop-blur-2xl z-10 space-y-5"
+        {/* 2. Search & List Controls */}
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-500/20 bg-slate-950/80 p-3.5 backdrop-blur-md font-mono text-xs">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Filter reports by ID, title, verdict, or source keyword..."
+            className="w-full bg-slate-900/90 rounded-lg border border-slate-800 px-3.5 py-2 text-slate-100 placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="text-slate-400 hover:text-slate-200 text-xs px-2"
             >
-              <div className="flex items-start justify-between pb-4 border-b border-border/70">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-mono font-bold text-cyber-cyan">
-                      {selectedReport.id}
-                    </span>
-                    <span className="text-xs text-text-muted font-mono">• {selectedReport.date}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-text">{selectedReport.title}</h3>
-                </div>
+              Clear
+            </button>
+          )}
+        </div>
 
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-3"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-mono uppercase font-bold text-text-muted mb-1.5">
-                  Executive Summary:
-                </h4>
-                <p className="text-xs text-text leading-relaxed bg-surface-2/80 p-3.5 rounded-xl border border-border">
-                  {selectedReport.summary}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-mono uppercase font-bold text-text-muted mb-2">
-                  Key Intelligence Findings (Dossier Preview):
-                </h4>
-                <ul className="space-y-2 text-xs text-text-muted">
-                  {selectedReport.keyFindings.map((finding, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-cyber-cyan mt-0.5 flex-shrink-0" />
-                      <span className="leading-relaxed">{finding}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-border/60">
-                <span className="text-xs text-text-muted font-mono">Format: {selectedReport.format}</span>
-
-                <div className="flex items-center gap-2">
-                  <GlowButton
-                    size="sm"
-                    variant="primary"
-                    leftIcon={<Download className="w-3.5 h-3.5" />}
-                    onClick={() => {
-                      handleSimulateDownload(selectedReport.title);
-                      setSelectedReport(null);
-                    }}
-                  >
-                    Export Dossier
-                  </GlowButton>
-                </div>
-              </div>
-            </motion.div>
+        {/* 3. Reports Table */}
+        {reports.length === 0 ? (
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-8 text-center font-mono">
+            <EmptyState
+              title="No Reports Generated Yet"
+              description="Compile an executive brief or seed demo reports to view simulated cybersecurity dossiers."
+              actionLabel="Generate Report"
+              onAction={() => setIsGeneratorOpen(true)}
+            />
           </div>
+        ) : filteredReports.length === 0 ? (
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-8 text-center font-mono">
+            <EmptyState
+              title="No Matching Reports Found"
+              description="No stored reports match your active search filter."
+              actionLabel="Clear Filter"
+              onAction={() => setSearchTerm('')}
+            />
+          </div>
+        ) : (
+          <ReportTable
+            reports={filteredReports}
+            onSelectReport={setSelectedReport}
+            onExportReport={setExportReport}
+            onDeleteReport={handleDeleteReport}
+            onDuplicateReport={handleDuplicateReport}
+          />
         )}
-      </AnimatePresence>
+
+        {/* 4. Generator Modal */}
+        <ReportGenerator
+          isOpen={isGeneratorOpen}
+          onClose={() => setIsGeneratorOpen(false)}
+          onReportCreated={(newRpt) => {
+            setReports(getStoredReports());
+            setSelectedReport(newRpt);
+          }}
+        />
+
+        {/* 5. Report Preview Drawer / Modal */}
+        {selectedReport && (
+          <ReportPreview
+            report={selectedReport}
+            onClose={() => setSelectedReport(null)}
+            onOpenExport={(rpt) => setExportReport(rpt)}
+          />
+        )}
+
+        {/* 6. Export Modal */}
+        {exportReport && (
+          <SimulatedExportModal
+            report={exportReport}
+            onClose={() => setExportReport(null)}
+          />
+        )}
+      </div>
     </PageContainer>
   );
 }

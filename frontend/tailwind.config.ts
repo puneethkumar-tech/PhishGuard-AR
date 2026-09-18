@@ -10,36 +10,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#020817",
+        background: "var(--background)",
         surface: {
-          DEFAULT: "#071426",
-          2: "#0B1B32",
-          3: "#112444",
+          DEFAULT: "var(--surface)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
         },
         primary: {
-          DEFAULT: "#2563FF",
-          bright: "#4D8DFF",
-          dark: "#1A49B8",
+          DEFAULT: "var(--primary)",
+          bright: "var(--primary-bright)",
+          dark: "var(--primary-dark)",
         },
         cyber: {
-          violet: "#7C3AED",
-          cyan: "#00D9FF",
-          danger: "#FF3B4F",
-          warning: "#F59E0B",
-          success: "#00E5A8",
+          violet: "var(--violet)",
+          cyan: "var(--cyan)",
+          danger: "var(--danger)",
+          warning: "var(--warning)",
+          success: "var(--success)",
         },
         text: {
-          DEFAULT: "#F8FAFC",
-          muted: "#94A3B8",
-          subtle: "#64748B",
+          DEFAULT: "var(--text)",
+          muted: "var(--text-muted)",
+          subtle: "var(--text-subtle)",
         },
         border: {
-          DEFAULT: "rgba(100, 150, 255, 0.18)",
-          glow: "rgba(0, 217, 255, 0.35)",
+          DEFAULT: "var(--border)",
+          strong: "var(--border-strong)",
+          glow: "var(--border-glow)",
         },
       },
       boxShadow: {
-        glass: "0 20px 60px rgba(0, 0, 0, 0.35)",
+        glass: "0 20px 60px var(--glass-shadow)",
         "glass-glow": "0 0 25px rgba(37, 99, 255, 0.2)",
         "cyan-glow": "0 0 30px rgba(0, 217, 255, 0.25)",
         "danger-glow": "0 0 25px rgba(255, 59, 79, 0.25)",
@@ -47,7 +48,7 @@ const config: Config = {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "cyber-grid": "linear-gradient(to right, rgba(100, 150, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(100, 150, 255, 0.05) 1px, transparent 1px)",
+        "cyber-grid": "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
         "hero-glow": "radial-gradient(circle at 60% 30%, rgba(37, 99, 255, 0.15) 0%, rgba(124, 58, 237, 0.1) 40%, transparent 70%)",
       },
       keyframes: {
