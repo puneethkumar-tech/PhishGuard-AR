@@ -442,3 +442,308 @@ export interface SavedRobustnessItem {
   defenseStrategy: string;
 }
 
+// ==========================================
+// PHASE 7: ANALYTICS + SECURITY DASHBOARD TYPES
+// ==========================================
+
+export type DashboardTimeRange = '24H' | '7D' | '30D';
+
+export interface DashboardKpiMetric {
+  id: string;
+  label: string;
+  value: string;
+  numericValue: number;
+  trend: string;
+  trendType: 'positive' | 'negative' | 'neutral';
+  description: string;
+  icon: string;
+  sparkline: number[];
+  tag: 'DEMO' | 'SIMULATION';
+}
+
+export interface ThreatActivityTimeseriesPoint {
+  timestamp: string;
+  timeLabel: string;
+  detected: number;
+  suspicious: number;
+  blocked: number;
+  total: number;
+}
+
+export interface ThreatSeverityItem {
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'SAFE';
+  count: number;
+  percentage: number;
+  color: string;
+  description: string;
+}
+
+export interface ThreatTypeItem {
+  id: string;
+  name: string;
+  count: number;
+  percentage: number;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  affectedSignals: string[];
+  color: string;
+}
+
+export interface DetectionPerformanceData {
+  precision: number;
+  recall: number;
+  f1Score: number;
+  accuracy: number;
+  falsePositiveRate: number;
+  falseNegativeRate: number;
+  benchmarkModelName: string;
+  comparisonModelName: string;
+}
+
+export interface ModelComparisonMetricItem {
+  attribute: string;
+  svmScore: number;
+  distilbertScore: number;
+  unit?: string;
+  description: string;
+}
+
+export interface DashboardRobustnessSummary {
+  baselineStability: number;
+  underAttackStability: number;
+  confidenceRetention: number;
+  recoveryRate: number;
+  signalPreservation: number;
+  compositeRobustnessScore: number;
+  activeHardeningTechnique: string;
+  status: 'ROBUST' | 'HIGH' | 'MODERATE';
+}
+
+export interface AttackTechniqueStat {
+  id: string;
+  name: string;
+  attempts: number;
+  confidenceDrop: number;
+  recoveryRate: number;
+  riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface DefenseEffectivenessStat {
+  id: string;
+  name: string;
+  recoveryRate: number;
+  signalPreservation: number;
+  effectivenessRating: 'EXCELLENT' | 'HIGH' | 'MODERATE';
+  status: 'ACTIVE' | 'CALIBRATED';
+}
+
+export interface SecurityTrendPoint {
+  timeLabel: string;
+  threatVolume: number;
+  detectionConfidence: number;
+  robustness: number;
+  defenseRecovery: number;
+}
+
+export interface SecurityEventFeedItem {
+  id: string;
+  timestamp: string;
+  eventType: 'PHISHING DETECTED' | 'ROBUSTNESS TEST' | 'DEFENSE SIMULATION' | 'SUSPICIOUS URL' | 'SAFE MESSAGE' | 'BLOCKED PAYLOAD';
+  category: string;
+  shortDescription: string;
+  confidence: number;
+  threatLevel: ThreatLevel;
+  severity: ThreatSeverity;
+  status: 'ANALYZED' | 'CONTAINED' | 'HARDENED' | 'CLEAN' | 'QUARANTINED';
+}
+
+export interface TopThreatSignalItem {
+  id: string;
+  signal: string;
+  category: string;
+  impactScore: number; // 0 - 100
+  frequencyPercentage: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface SecurityPostureBreakdownItem {
+  axis: string;
+  score: number; // 0 - 100
+  benchmark: number;
+  weight: number;
+}
+
+export interface DashboardDataset {
+  timeRange: DashboardTimeRange;
+  snapshotTimestamp: string;
+  postureScore: number;
+  postureRating: 'HIGH RESILIENCE' | 'MODERATE RESILIENCE' | 'OPTIMAL RESILIENCE' | 'AT RISK';
+  postureSubMetrics: {
+    threatDetection: number;
+    modelStability: number;
+    adversarialResilience: number;
+    defenseRecovery: number;
+    signalIntegrity: number;
+  };
+  kpis: DashboardKpiMetric[];
+  threatActivity: ThreatActivityTimeseriesPoint[];
+  severityDistribution: ThreatSeverityItem[];
+  threatTypes: ThreatTypeItem[];
+  detectionPerformance: DetectionPerformanceData;
+  modelComparison: ModelComparisonMetricItem[];
+  robustness: DashboardRobustnessSummary;
+  attackAnalytics: AttackTechniqueStat[];
+  defenseEffectiveness: DefenseEffectivenessStat[];
+  securityTrends: SecurityTrendPoint[];
+  events: SecurityEventFeedItem[];
+  topSignals: TopThreatSignalItem[];
+  aiInsightText: string;
+  postureBreakdown: SecurityPostureBreakdownItem[];
+}
+
+// ==========================================
+// PHASE 8: ADVANCED AI VISUALIZATIONS & NEURAL NETWORK TYPES
+// ==========================================
+
+export type AIVisualizationMode =
+  | 'PIPELINE'
+  | 'NEURAL_NETWORK'
+  | 'SIGNAL_FUSION'
+  | 'THREAT_CONSTELLATION'
+  | 'EXPLAINABILITY'
+  | 'pipeline'
+  | 'neural'
+  | 'fusion'
+  | 'constellation'
+  | 'explainability';
+
+export type InferenceSpeed = 'slow' | 'normal' | 'fast';
+
+export type InferenceSimulationStage =
+  | 'READY'
+  | 'INGESTING'
+  | 'FEATURE_EXTRACTION'
+  | 'SVM_ANALYSIS'
+  | 'DISTILBERT_ANALYSIS'
+  | 'TRANSFORMER_ANALYSIS'
+  | 'SIGNAL_FUSION'
+  | 'ROBUSTNESS_CHECK'
+  | 'DECISION'
+  | 'EXPLANATION'
+  | 'COMPLETE';
+
+export interface NeuralLayerInfo {
+  id: string;
+  index: number;
+  name: string;
+  shortName: string;
+  description: string;
+  nodeCount: number;
+  color: string;
+}
+
+export interface NeuralNodeData {
+  id: string;
+  layerIndex: number;
+  name: string;
+  layerName: string;
+  role: string;
+  signalType: string;
+  simulatedActivation: number; // 0 to 1
+  contributionLevel: 'High' | 'Medium' | 'Low';
+  description: string;
+  relatedSignals: string[];
+  position: [number, number, number];
+  color: string;
+  isHighlighted?: boolean;
+}
+
+export interface NeuralConnectionData {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  fromPosition: [number, number, number];
+  toPosition: [number, number, number];
+  weight: number;
+  isActive: boolean;
+  pulseSpeed?: number;
+  color?: string;
+}
+
+export interface SignalFusionItemData {
+  id: string;
+  name: string;
+  category: string;
+  simulatedStrength: number; // 0 to 1
+  description: string;
+  weight: number;
+  status: 'CRITICAL' | 'WARNING' | 'ELEVATED' | 'NOMINAL';
+  color: string;
+}
+
+export interface AIThreatConstellationNode {
+  id: string;
+  name: string;
+  category: string;
+  riskLevel: 'CRITICAL' | 'HIGH' | 'ELEVATED' | 'LOW';
+  simulatedFrequency: string;
+  associatedSignals: string[];
+  robustnessExposure: string;
+  defenseStrategy: string;
+  position: [number, number, number];
+  connections: string[];
+  color: string;
+}
+
+export interface AIExplainabilityNodeData {
+  id: string;
+  label: string;
+  category: string;
+  simulatedContribution: number;
+  description: string;
+  parentIds: string[];
+  status: 'ACTIVE' | 'CALIBRATED' | 'INACTIVE';
+}
+
+export interface TokenAttentionItem {
+  token: string;
+  weight: number; // 0 to 1
+  category: string;
+  isPerturbed: boolean;
+}
+
+export interface InferenceTimelineStep {
+  stepNumber: number;
+  timecode: string;
+  title: string;
+  layer: string;
+  description: string;
+  simulatedDurationMs: number;
+  status: 'READY' | 'ACTIVE' | 'COMPLETED';
+}
+
+export interface AIDemoScenarioData {
+  id: string;
+  name: string;
+  category: string;
+  sampleInput: string;
+  verdict: 'SAFE' | 'SUSPICIOUS' | 'PHISHING' | 'ADVERSARIAL' | 'BLOCKED';
+  confidenceScore: number;
+  threatLevel: 'CRITICAL' | 'HIGH' | 'ELEVATED' | 'LOW' | 'critical' | 'high' | 'medium' | 'low' | ThreatLevel;
+  robustnessScore: number;
+  explanationSummary: string;
+  tokens: TokenAttentionItem[];
+  fusionSignals: SignalFusionItemData[];
+  primarySignals: string[];
+}
+
+export interface AIIntelligenceDataset {
+  scenario: AIDemoScenarioData;
+  layers: NeuralLayerInfo[];
+  nodes: NeuralNodeData[];
+  connections: NeuralConnectionData[];
+  fusionSignals: SignalFusionItemData[];
+  constellationNodes: AIThreatConstellationNode[];
+  explainabilityNodes: AIExplainabilityNodeData[];
+  tokens: TokenAttentionItem[];
+  timeline: InferenceTimelineStep[];
+}

@@ -16,6 +16,7 @@ import {
   FileCode,
   X,
   Copy,
+  Brain,
 } from 'lucide-react';
 import { saveScanToLocalHistory } from '@/lib/scan-engine';
 
@@ -102,6 +103,28 @@ export const ResultActionBar: React.FC<ResultActionBarProps> = ({
           >
             Export Analysis
           </GlowButton>
+
+          <Link
+            href="/dashboard/intelligence"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const targetScenario = result.isHomoglyph
+                  ? 'scenario-adv'
+                  : result.verdict === 'SAFE'
+                  ? 'scenario-benign'
+                  : 'scenario-cred';
+                localStorage.setItem('phishguard_last_scenario', targetScenario);
+              }
+            }}
+          >
+            <GlowButton
+              variant="secondary"
+              size="sm"
+              leftIcon={<Brain className="w-3.5 h-3.5 text-cyan-400" />}
+            >
+              View AI Intelligence
+            </GlowButton>
+          </Link>
 
           <Link
             href="/robustness"
