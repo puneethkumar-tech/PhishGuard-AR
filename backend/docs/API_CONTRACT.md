@@ -106,8 +106,16 @@ Content-Type: application/json
   "verdict": "malicious",
   "threat_type": "phishing",
   "score": 0.94,
-  "score_type": "probability",
-  "model_version": "v1.0"
+  "score_type": "confidence",
+  "model_version": "v1.0",
+  "indicators": [
+    "urgent_action",
+    "suspicious_link"
+  ],
+  "metadata": {
+    "tokens_analyzed": 14,
+    "confidence_calibrated": false
+  }
 }
 ```
 

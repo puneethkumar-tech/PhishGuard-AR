@@ -15,7 +15,8 @@ backend/
 ├── README_BACKEND.md         # This execution guide
 ├── docs/
 │   ├── API_CONTRACT.md       # Complete endpoint specifications
-│   └── BACKEND_STATUS.md     # Audit report and architectural status
+│   ├── BACKEND_STATUS.md     # Audit report and architectural status
+│   └── MODEL_INTEGRATION.md  # ML teammate model integration specification
 ├── src/
 │   ├── __init__.py
 │   ├── app.py                # Flask application factory (create_app)
@@ -34,6 +35,7 @@ backend/
     ├── test_auth.py          # Registration, login, validation, and token refresh tests
     ├── test_config.py        # Config environments & production validation tests
     ├── test_health.py        # Health status, security headers & CORS tests
+    ├── test_model_service.py # ModelService lifecycle, mock runner & validation tests
     └── test_scans.py         # Scan endpoints, model unavailable 503, history tests
 ```
 
@@ -86,6 +88,8 @@ Configure `.env` as needed:
 | `SECRET_KEY` | `dev-insecure-secret...` | Flask session secret (must be set to a secure string in production) |
 | `JWT_SECRET_KEY` | `dev-insecure-jwt...` | JWT signing secret (must be set to a secure string in production) |
 | `DATABASE_URL` | `sqlite:///phishguard.db` | SQLAlchemy database connection URI |
+| `MODEL_PATH` | `""` | Path to ML model bundle/artifact (e.g. `models/phishguard_model.pkl`) |
+| `MODEL_VERSION` | `"not-loaded"` | Version identifier for the active ML model |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173` | Allowed frontend domains (comma-separated allowlist) |
 | `JWT_ACCESS_TOKEN_EXPIRES` | `900` | Access token lifespan in seconds (15 minutes) |
 | `JWT_REFRESH_TOKEN_EXPIRES` | `604800` | Refresh token lifespan in seconds (7 days) |
@@ -103,10 +107,11 @@ The test suite runs entirely in-memory (`sqlite:///:memory:`) using isolated fix
 pytest -v
 ```
 
-All 26 automated unit and integration tests run across:
+All 36 automated unit and integration tests run across:
 - `tests/test_auth.py`: Registration, duplicate detection, password length validation, login, and token refresh.
 - `tests/test_config.py`: Environment classes and production secret validation.
 - `tests/test_health.py`: Health check, defensive headers (`X-Content-Type-Options`, `X-Frame-Options`), and CORS allowlist enforcement.
+- `tests/test_model_service.py`: ModelService initialization, lazy-loading, missing model path handling, PredictionResult schema normalization, and mock runner execution.
 - `tests/test_scans.py`: Authorization enforcement, payload limits (100k chars), honest 503 `model_unavailable` handling, scan history listing, and record ownership isolation.
 
 ---

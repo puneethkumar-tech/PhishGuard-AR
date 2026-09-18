@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from ..services.model_service import ModelService, ModelUnavailableError
+from ..services.model_service import ModelError, ModelService, ModelUnavailableError
 from ..services.scan_service import get_scan_by_id, get_user_scans, save_scan
 
 scans_bp = Blueprint("scans", __name__, url_prefix="/api")
@@ -33,6 +33,11 @@ def scan():
             "error": "model_unavailable",
             "message": str(exc),
         }), 503
+    except ModelError as exc:
+        return jsonify({
+            "error": "model_error",
+            "message": str(exc),
+        }), 500
 
     scan_record = save_scan(int(get_jwt_identity()), text, result)
     return jsonify({

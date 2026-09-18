@@ -27,6 +27,10 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES", "604800"))  # 7 days
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///phishguard.db")
 
+    # ML Model Configuration
+    MODEL_PATH = os.getenv("MODEL_PATH", "")
+    MODEL_VERSION = os.getenv("MODEL_VERSION", "not-loaded")
+
     # CORS Origins Allowlist (comma-separated string in env)
     CORS_ALLOWED_ORIGINS = parse_cors_origins(
         os.getenv("CORS_ALLOWED_ORIGINS"),
@@ -43,6 +47,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SECRET_KEY = os.getenv("SECRET_KEY", INSECURE_DEV_SECRET)
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", INSECURE_DEV_JWT_SECRET)
+    MODEL_PATH = os.getenv("MODEL_PATH", "")
 
 class TestingConfig(Config):
     """Testing environment configuration with in-memory database."""
@@ -51,6 +56,8 @@ class TestingConfig(Config):
     SECRET_KEY = "test-secret-key-strictly-for-testing"
     JWT_SECRET_KEY = "test-jwt-secret-key-strictly-for-testing"
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    MODEL_PATH = None
+    MODEL_VERSION = "test-stub-v0"
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -62,6 +69,8 @@ class ProductionConfig(Config):
     TESTING = False
     SECRET_KEY = os.getenv("SECRET_KEY")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    MODEL_PATH = os.getenv("MODEL_PATH", "")
+    MODEL_VERSION = os.getenv("MODEL_VERSION", "phishguard-prod-v1")
 
     # Production does not provide fallback origins by default
     CORS_ALLOWED_ORIGINS = parse_cors_origins(os.getenv("CORS_ALLOWED_ORIGINS"), default_origins=[])
