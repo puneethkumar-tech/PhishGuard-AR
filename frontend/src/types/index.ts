@@ -747,3 +747,207 @@ export interface AIIntelligenceDataset {
   tokens: TokenAttentionItem[];
   timeline: InferenceTimelineStep[];
 }
+
+// ==========================================
+// PHASE 9: HISTORY, REPORTS, ALERTS & SETTINGS TYPES
+// ==========================================
+
+export type ThreatVerdict = 'SAFE' | 'SUSPICIOUS' | 'PHISHING' | 'ADVERSARIAL' | 'BLOCKED';
+
+export type ThreatSeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'SAFE';
+
+export type ScanSourceType = 'TEXT' | 'EMAIL' | 'URL' | 'FILE' | 'DEMO';
+
+export type AIModelBranch = 'TF_IDF_SVM' | 'DISTILBERT_TRANSFORMER' | 'BAYESIAN_FUSION';
+
+export interface ThreatHistoryRecord {
+  id: string;
+  timestamp: string;
+  input: string;
+  inputType: ScanSourceType;
+  threatType: string;
+  verdict: ThreatVerdict;
+  severity: ThreatSeverityLevel;
+  confidence: number; // 0 - 100
+  robustnessScore: number; // 0 - 100
+  modelBranch: AIModelBranch;
+  indicators: string[];
+  recommendation: string;
+  explanation: string;
+  isHomoglyph?: boolean;
+  attackContext?: {
+    mitreTactic: string;
+    technique: string;
+    description: string;
+  };
+}
+
+export interface HistoryFilterState {
+  searchQuery: string;
+  verdict: 'ALL' | ThreatVerdict;
+  severity: 'ALL' | ThreatSeverityLevel;
+  source: 'ALL' | ScanSourceType;
+  dateRange: 'ALL' | 'TODAY' | 'LAST_7_DAYS' | 'LAST_30_DAYS';
+  model: 'ALL' | AIModelBranch;
+}
+
+export type ReportType =
+  | 'THREAT_ANALYSIS'
+  | 'FORENSIC_ANALYSIS'
+  | 'ROBUSTNESS_ASSESSMENT'
+  | 'EXECUTIVE_SUMMARY'
+  | 'FULL_SECURITY_ANALYSIS';
+
+export type ReportStatus = 'GENERATED' | 'DRAFT' | 'ARCHIVED';
+
+export type ReportExportFormat = 'JSON' | 'TXT' | 'CSV' | 'PDF';
+
+export interface ReportRecord {
+  id: string;
+  title: string;
+  reportType: ReportType;
+  sourceLabel: string;
+  verdict: ThreatVerdict;
+  severity: ThreatSeverityLevel;
+  confidence: number;
+  robustnessScore: number;
+  createdAt: string;
+  status: ReportStatus;
+  executiveSummary: string;
+  evidence: string[];
+  modelAnalysis: {
+    svmConfidence: number;
+    distilbertConfidence: number;
+    fusionScore: number;
+    concordanceIndex: string;
+  };
+  attackContext: {
+    tactic: string;
+    technique: string;
+    cveId?: string;
+    notes: string;
+  };
+  robustnessAssessment: {
+    baselineAccuracy: number;
+    underAttackAccuracy: number;
+    hardenedAccuracy: number;
+    resilienceRating: 'OPTIMAL' | 'HIGH' | 'MODERATE' | 'VULNERABLE';
+  };
+  defenseInterpretation: string;
+  recommendations: string[];
+  timeline: {
+    time: string;
+    stage: string;
+    description: string;
+  }[];
+}
+
+export type AlertSeverityType = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type AlertStatusType = 'NEW' | 'ACKNOWLEDGED' | 'RESOLVED' | 'SIMULATED';
+
+export type AlertCategoryType =
+  | 'HIGH_RISK_PHISHING'
+  | 'ADVERSARIAL_INPUT_DETECTED'
+  | 'HOMOGRAPH_ATTACK_DETECTED'
+  | 'URL_OBFUSCATION_DETECTED'
+  | 'ROBUSTNESS_DEGRADATION'
+  | 'MODEL_DISAGREEMENT'
+  | 'HIGH_SEVERITY_EVENT'
+  | 'UNUSUAL_SIGNAL_PATTERN';
+
+export interface SecurityAlertRecord {
+  id: string;
+  timestamp: string;
+  severity: AlertSeverityType;
+  category: AlertCategoryType;
+  title: string;
+  source: string;
+  threatType: string;
+  confidence: number;
+  explanation: string;
+  shortExplanation?: string;
+  status: AlertStatusType;
+  isRead: boolean;
+  associatedScanId?: string;
+}
+
+export interface AlertFilterState {
+  search: string;
+  severity: 'ALL' | AlertSeverityType;
+  status: 'ALL' | AlertStatusType;
+  threatType: 'ALL' | string;
+}
+
+export interface PlatformProfileSettings {
+  displayName: string;
+  email: string;
+  role: string;
+  organization: string;
+}
+
+export interface PlatformAppearanceSettings {
+  theme: 'dark' | 'light' | 'system';
+  accentIntensity: 'standard' | 'high';
+  density: 'comfortable' | 'compact';
+  animation: 'full' | 'reduced' | 'off';
+}
+
+export interface PlatformSecurityPreferences {
+  autoRunRobustness: boolean;
+  showThreatConfirmations: boolean;
+  showConfidenceIndicators: boolean;
+  showForensicDetails: boolean;
+  showAttackContext: boolean;
+  showAIExplanations: boolean;
+}
+
+export interface PlatformScanPreferences {
+  defaultInputType: ScanSourceType;
+  defaultScenarioId: string;
+  autoSaveScanHistory: boolean;
+  showScanPipeline: boolean;
+}
+
+export interface PlatformAIPreferences {
+  modelVisualization: 'FUSION' | 'TF_IDF_SVM' | 'DISTILBERT';
+  showSignalContributions: boolean;
+  showExplainability: boolean;
+  showModelComparison: boolean;
+  showNeuralVisualization: boolean;
+}
+
+export interface PlatformRobustnessPreferences {
+  defaultAttackStrength: 'LOW' | 'MEDIUM' | 'HIGH';
+  defaultIntensity: number; // 0 - 100
+  preserveSemantics: boolean;
+  preserveUrlStructure: boolean;
+  autoShowRobustnessResult: boolean;
+}
+
+export interface PlatformNotificationSettings {
+  threatAlerts: boolean;
+  robustnessAlerts: boolean;
+  modelDisagreementAlerts: boolean;
+  systemNotifications: boolean;
+  desktopNotificationSimulation: boolean;
+  frequency: 'immediate' | 'grouped' | 'muted';
+}
+
+export interface PlatformAccessibilitySettings {
+  reducedMotion: boolean;
+  highContrast: boolean;
+  largerText: boolean;
+  keyboardShortcutsHints: boolean;
+}
+
+export interface PlatformSettings {
+  profile: PlatformProfileSettings;
+  appearance: PlatformAppearanceSettings;
+  security: PlatformSecurityPreferences;
+  scan: PlatformScanPreferences;
+  ai: PlatformAIPreferences;
+  robustness: PlatformRobustnessPreferences;
+  notifications: PlatformNotificationSettings;
+  accessibility: PlatformAccessibilitySettings;
+}

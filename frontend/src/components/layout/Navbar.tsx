@@ -4,11 +4,25 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Search, Bell, Moon, Sun, User, Menu, X, Command } from 'lucide-react';
+import {
+  Shield,
+  Search,
+  Bell,
+  Moon,
+  Sun,
+  User,
+  Menu,
+  X,
+  Command,
+  Sparkles,
+} from 'lucide-react';
 import { NAV_ITEMS, BRAND } from '@/lib/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 import { CommandSearchModal } from './CommandSearchModal';
 import { NotificationDropdown } from './NotificationDropdown';
 import { ProfileDropdown } from './ProfileDropdown';
+import { DemoModeIndicator } from '@/components/demo/DemoModeIndicator';
+import { GuidedDemoModal } from '@/components/demo/GuidedDemoModal';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -17,10 +31,11 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   const pathname = usePathname();
+  const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isCyberTheme, setIsCyberTheme] = useState(true);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   return (
     <>
@@ -48,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }
                   {BRAND.name}
                 </span>
                 <span className="px-1.5 py-0.2 text-[9px] font-mono font-semibold bg-cyber-cyan/15 text-cyber-cyan rounded border border-cyber-cyan/30">
-                  PHASE 4
+                  DEMO
                 </span>
               </div>
               <span className="text-[10px] text-text-muted font-medium tracking-wide">
@@ -58,32 +73,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }
           </Link>
         </div>
 
-        {/* Center: Desktop Navigation Bar */}
-        <nav className="hidden xl:flex items-center gap-1 bg-surface-2/70 p-1.5 rounded-full border border-border/70 backdrop-blur-md">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors duration-200 ${
-                  isActive
-                    ? 'text-white font-semibold'
-                    : 'text-text-muted hover:text-text hover:bg-surface-3/60'
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavTab"
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-primary-bright border border-cyber-cyan/40 shadow-glass-glow -z-10"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                  />
-                )}
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Center: Global Demo Mode Indicator & Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-3">
+          <DemoModeIndicator />
+
+          {/* Quick Guided Tour Button */}
+          <button
+            onClick={() => setIsDemoModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/15 via-cyan-500/15 to-blue-500/15 hover:from-purple-500/25 hover:to-blue-500/25 border border-purple-500/30 text-xs font-mono font-semibold text-purple-600 dark:text-purple-300 shadow-sm transition-all"
+            title="Launch Interactive Judge / Guided Tour"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-500 dark:text-purple-300 animate-pulse" />
+            <span>Guided Tour</span>
+          </button>
+        </div>
 
         {/* Right: Search, Notifications, Theme, Profile */}
         <div className="flex items-center gap-2 sm:gap-3 relative">
@@ -125,17 +128,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }
             />
           </div>
 
-          {/* Theme Control Toggle (Visual Cyber Switch) */}
+          {/* Real Global Dark / Light Theme Toggle */}
           <button
-            onClick={() => setIsCyberTheme((prev) => !prev)}
+            onClick={toggleTheme}
             className="p-2 rounded-xl bg-surface-2/70 border border-border/80 text-text-muted hover:text-text hover:border-primary-bright/40 transition-colors"
-            aria-label="Toggle Theme Mode"
-            title={`Active Theme: ${isCyberTheme ? 'Cyber Deep Navy (Recommended)' : 'Cyber Matrix Dark'}`}
+            aria-label="Toggle Dark/Light Mode"
+            title={`Active Theme: ${theme.toUpperCase()} (Click to toggle)`}
           >
-            {isCyberTheme ? (
+            {resolvedTheme === 'dark' ? (
               <Moon className="w-4 h-4 text-cyber-cyan" />
             ) : (
-              <Sun className="w-4 h-4 text-cyber-warning" />
+              <Sun className="w-4 h-4 text-amber-500" />
             )}
           </button>
 
@@ -155,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }
               </div>
               <div className="hidden lg:flex flex-col text-left">
                 <span className="text-xs font-semibold text-text leading-tight">SecOps Admin</span>
-                <span className="text-[10px] text-cyber-success font-mono">SOC Active</span>
+                <span className="text-[10px] text-cyber-success font-mono">SOC Demo</span>
               </div>
             </button>
 
@@ -171,6 +174,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, isSidebarOpen }
       <CommandSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
+      />
+
+      {/* Guided Tour Modal */}
+      <GuidedDemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
       />
     </>
   );

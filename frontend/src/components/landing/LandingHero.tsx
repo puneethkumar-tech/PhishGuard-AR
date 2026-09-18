@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Shield, Sparkles, ArrowRight, Lock, Terminal, Activity } from 'lucide-react';
+import { Shield, Sparkles, ArrowRight, Lock, Terminal, Activity, Scan } from 'lucide-react';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { SceneContainer } from '@/components/3d/SceneContainer';
 
@@ -27,46 +27,46 @@ export const LandingHero: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-cyan opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cyber-cyan"></span>
             </span>
-            <span className="text-cyber-cyan font-bold tracking-wider">SECURITY GRID ONLINE</span>
+            <span className="text-cyber-cyan font-bold tracking-wider uppercase">PHISHGUARD-AR</span>
             <span className="text-text-muted">•</span>
-            <span className="text-text-muted">SIMULATION ENVIRONMENT</span>
+            <span className="text-text-muted">FRONTEND DEMONSTRATION</span>
           </div>
 
           {/* Main Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-text leading-[1.1]">
-            AI-POWERED <br />
+            ADVERSARIALLY ROBUST <br />
             <span className="bg-gradient-to-r from-primary-bright via-cyber-cyan to-white bg-clip-text text-transparent">
-              CYBER DEFENSE
+              AI PHISHING DEFENSE
             </span>
           </h1>
 
           {/* Subtitle / Value Proposition */}
           <p className="text-base sm:text-lg text-text-muted max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans">
             Detect threats. Understand attacks. Resist adversarial manipulation. 
-            PhishGuard-AR unifies dual-transformer NLP with real-time perturbation hardening to protect enterprise communication surfaces.
+            PhishGuard-AR demonstrates dual-transformer conceptual NLP with perturbation hardening to protect communication surfaces against evasion tactics.
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-            <Link href="/login" className="w-full sm:w-auto">
+            <Link href="/home" className="w-full sm:w-auto">
               <GlowButton
                 variant="primary"
                 size="lg"
                 className="w-full sm:w-auto"
                 rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
               >
-                ENTER PHISHGUARD-AR
+                ENTER SECURITY CENTER
               </GlowButton>
             </Link>
 
-            <Link href="/login" className="w-full sm:w-auto">
+            <Link href="/scan" className="w-full sm:w-auto">
               <GlowButton
                 variant="ghost"
                 size="lg"
                 className="w-full sm:w-auto"
-                leftIcon={<Lock className="w-4 h-4" />}
+                leftIcon={<Scan className="w-4 h-4" />}
               >
-                Explore Platform
+                Try Demo Scan
               </GlowButton>
             </Link>
           </div>
@@ -75,10 +75,10 @@ export const LandingHero: React.FC = () => {
           <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border/60 max-w-lg mx-auto lg:mx-0">
             <div>
               <span className="block text-2xl font-bold font-mono text-cyber-cyan">99.2%</span>
-              <span className="text-xs text-text-muted">Adversarial Accuracy</span>
+              <span className="text-xs text-text-muted">Simulated Accuracy</span>
             </div>
             <div>
-              <span className="block text-2xl font-bold font-mono text-purple-300">~1.3s</span>
+              <span className="block text-2xl font-bold font-mono text-purple-400">~1.3s</span>
               <span className="text-xs text-text-muted">Pipeline Latency</span>
             </div>
             <div>
@@ -109,11 +109,11 @@ export const LandingHero: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-text">3D Global Sensor Grid</h4>
-                  <p className="text-[10px] text-text-muted font-mono">Live Threat Defense Visualizer</p>
+                  <p className="text-[10px] text-text-muted font-mono">Simulated Threat Visualizer</p>
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyber-success/15 text-cyber-success border border-cyber-success/30">
-                ACTIVE
+                SIMULATED
               </span>
             </div>
           </div>

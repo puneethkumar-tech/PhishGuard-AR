@@ -45,14 +45,32 @@ export const RobustnessLabHeader: React.FC<RobustnessLabHeaderProps> = ({
       {/* Action Controls */}
       <div className="flex items-center gap-2.5 flex-wrap">
         {hasResult && (
-          <GlowButton
-            variant="secondary"
-            size="sm"
-            onClick={onExport}
-            leftIcon={<Download className="w-3.5 h-3.5" />}
-          >
-            Export Dossier
-          </GlowButton>
+          <>
+            <a
+              href="/reports"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('phishguard_active_report_source', 'LATEST_ROBUSTNESS');
+                }
+              }}
+            >
+              <GlowButton
+                variant="primary"
+                size="sm"
+                leftIcon={<Sparkles className="w-3.5 h-3.5 text-cyan-300" />}
+              >
+                Generate Report
+              </GlowButton>
+            </a>
+            <GlowButton
+              variant="secondary"
+              size="sm"
+              onClick={onExport}
+              leftIcon={<Download className="w-3.5 h-3.5" />}
+            >
+              Export Dossier
+            </GlowButton>
+          </>
         )}
 
         <GlowButton

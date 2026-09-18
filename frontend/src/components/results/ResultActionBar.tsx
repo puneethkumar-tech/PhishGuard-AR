@@ -95,13 +95,30 @@ export const ResultActionBar: React.FC<ResultActionBarProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/reports"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('phishguard_active_report_source', 'LATEST_SCAN');
+              }
+            }}
+          >
+            <GlowButton
+              variant="secondary"
+              size="sm"
+              leftIcon={<Download className="w-3.5 h-3.5 text-cyber-cyan" />}
+            >
+              Generate Report
+            </GlowButton>
+          </Link>
+
           <GlowButton
             variant="ghost"
             size="sm"
             onClick={() => setIsExportOpen(true)}
-            leftIcon={<Download className="w-3.5 h-3.5 text-cyber-cyan" />}
+            leftIcon={<FileCode className="w-3.5 h-3.5 text-cyber-cyan" />}
           >
-            Export Analysis
+            Export JSON
           </GlowButton>
 
           <Link

@@ -178,8 +178,13 @@ export default function SignupPage() {
                   isLoading={isLoading}
                   rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
                 >
-                  CREATE SECOPS ACCOUNT
+                  INITIALIZE DEMO PROFILE
                 </GlowButton>
+
+                <div className="p-3 rounded-xl bg-surface-2/60 border border-border/70 text-[11px] text-text-muted text-center flex items-center justify-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
+                  <span>Frontend Demo: Session stored locally in browser storage.</span>
+                </div>
               </div>
             </form>
 

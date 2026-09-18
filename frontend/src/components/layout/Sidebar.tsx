@@ -16,6 +16,8 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
+  Cpu,
+  Bell,
 } from 'lucide-react';
 import { NAV_SECTIONS } from '@/lib/constants';
 
@@ -24,8 +26,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Search: <Search className="w-4 h-4" />,
   FlaskConical: <FlaskConical className="w-4 h-4" />,
   LayoutDashboard: <LayoutDashboard className="w-4 h-4" />,
+  Cpu: <Cpu className="w-4 h-4" />,
   History: <History className="w-4 h-4" />,
   FileText: <FileText className="w-4 h-4" />,
+  Bell: <Bell className="w-4 h-4" />,
   Settings: <Settings className="w-4 h-4" />,
 };
 
