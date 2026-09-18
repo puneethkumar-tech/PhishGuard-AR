@@ -1,21 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlowButton } from '@/components/ui/GlowButton';
-import { Badge } from '@/components/ui/Badge';
 import { RobotSceneContainer } from '@/components/ai/RobotSceneContainer';
-import { ScanPipelineProgress, SCAN_PIPELINE_STAGES } from '@/components/scan/ScanPipelineProgress';
-import { ThreatHighlights } from '@/components/scan/ThreatHighlights';
-import { AIExplanationCards } from '@/components/scan/AIExplanationCards';
-import { RecommendationBox } from '@/components/scan/RecommendationBox';
-import { ScanConfidenceGauge } from '@/components/scan/ScanConfidenceGauge';
+import { ScanPipelineProgress } from '@/components/scan/ScanPipelineProgress';
 import { ScanDualPipelineVisual } from '@/components/scan/ScanDualPipelineVisual';
+import { ForensicWorkspace } from '@/components/results/ForensicWorkspace';
 import {
   FileText,
   Mail,
@@ -23,24 +17,14 @@ import {
   Link2,
   Sparkles,
   ShieldCheck,
-  ShieldAlert,
   RotateCcw,
-  CheckCircle2,
-  AlertTriangle,
   ArrowRight,
-  Terminal,
-  Cpu,
-  Layers,
   Copy,
   Check,
-  FlaskConical,
-  History,
-  Bookmark,
   Activity,
-  Info,
 } from 'lucide-react';
 import { DEMO_SAMPLE_MESSAGES } from '@/lib/demo-data';
-import { analyzeDemoThreat, saveScanToLocalHistory } from '@/lib/scan-engine';
+import { analyzeDemoThreat } from '@/lib/scan-engine';
 import { RobotState, ScanResult, DemoScanSample } from '@/types';
 
 const SCAN_TABS = [
@@ -51,7 +35,6 @@ const SCAN_TABS = [
 ];
 
 export default function ScanPage() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'text' | 'email' | 'url' | 'upload'>('text');
   const [inputText, setInputText] = useState(DEMO_SAMPLE_MESSAGES[0].content);
   const [robotState, setRobotState] = useState<RobotState>('IDLE');
@@ -59,7 +42,6 @@ export default function ScanPage() {
   const [currentStage, setCurrentStage] = useState(0);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [copied, setCopied] = useState(false);
-  const [savedToHistory, setSavedToHistory] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const characterCount = inputText.length;
@@ -71,7 +53,6 @@ export default function ScanPage() {
     setScanState('scanning');
     setCurrentStage(0);
     setRobotState('SCANNING');
-    setSavedToHistory(false);
   };
 
   useEffect(() => {
@@ -82,15 +63,15 @@ export default function ScanPage() {
     if (currentStage === 0) {
       // INGESTING stage -> Robot in SCANNING
       setRobotState('SCANNING');
-      timer = setTimeout(() => setCurrentStage(1), 700);
+      timer = setTimeout(() => setCurrentStage(1), 650);
     } else if (currentStage === 1) {
       // EXTRACTING SIGNALS -> Robot in ANALYZING
       setRobotState('ANALYZING');
-      timer = setTimeout(() => setCurrentStage(2), 750);
+      timer = setTimeout(() => setCurrentStage(2), 700);
     } else if (currentStage === 2) {
       // NEURAL ANALYZING -> Robot continues ANALYZING
       setRobotState('ANALYZING');
-      timer = setTimeout(() => setCurrentStage(3), 850);
+      timer = setTimeout(() => setCurrentStage(3), 800);
     } else if (currentStage === 3) {
       // THREAT ASSESSMENT -> Robot detects threat or safe state
       const result = analyzeDemoThreat(inputText, activeTab);
@@ -100,24 +81,23 @@ export default function ScanPage() {
       } else {
         setRobotState('THREAT_DETECTED');
       }
-      timer = setTimeout(() => setCurrentStage(4), 900);
+      timer = setTimeout(() => setCurrentStage(4), 850);
     } else if (currentStage === 4) {
       // EXPLANATION / FINAL STAGE
       timer = setTimeout(() => {
         setScanState('completed');
         if (scanResult?.threatLevel !== 'safe') {
           setRobotState('EXPLAINING');
-          // Then transition to PROTECTED after explanation reveal
-          setTimeout(() => setRobotState('PROTECTED'), 2200);
+          setTimeout(() => setRobotState('PROTECTED'), 2000);
         } else {
           setRobotState('PROTECTED');
         }
 
-        // Scroll result into view smoothly
+        // Scroll result workspace into view
         setTimeout(() => {
-          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 150);
-      }, 700);
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }, 650);
     }
 
     return () => clearTimeout(timer);
@@ -130,7 +110,6 @@ export default function ScanPage() {
     setCurrentStage(0);
     setRobotState('IDLE');
     setScanResult(null);
-    setSavedToHistory(false);
   };
 
   const handleClear = () => {
@@ -139,7 +118,6 @@ export default function ScanPage() {
     setCurrentStage(0);
     setRobotState('IDLE');
     setScanResult(null);
-    setSavedToHistory(false);
   };
 
   const handleCopy = () => {
@@ -148,14 +126,14 @@ export default function ScanPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveToHistory = () => {
-    if (!scanResult) return;
-    saveScanToLocalHistory(scanResult);
-    setSavedToHistory(true);
-  };
-
-  const handleTestRobustness = () => {
-    router.push('/robustness');
+  const handleForensicTabChange = (tabId: string) => {
+    if (tabId === 'models') {
+      setRobotState('ANALYZING');
+    } else if (tabId === 'robustness' || tabId === 'overview') {
+      setRobotState('PROTECTED');
+    } else if (tabId === 'evidence' || tabId === 'attack') {
+      setRobotState('EXPLAINING');
+    }
   };
 
   const currentTabObj = SCAN_TABS.find((t) => t.id === activeTab) || SCAN_TABS[0];
@@ -164,9 +142,9 @@ export default function ScanPage() {
     <PageContainer>
       {/* 1. Standardized Page Header */}
       <PageHeader
-        eyebrow="AI THREAT SCANNER"
-        title="Flagship AI Threat Scanner"
-        description="Analyze suspicious messages, URLs, email headers, and communication signals with real-time AI Cyber Robot synchronization."
+        eyebrow="AI THREAT SCANNER & FORENSICS"
+        title="AI Threat Scanner & Forensic Workspace"
+        description="Analyze suspicious messages, URLs, and communication signals with real-time AI Cyber Robot synchronization and multi-tier explainability."
         statusBadge={{
           label: robotState === 'IDLE' ? 'AI Ready' : robotState.replace('_', ' '),
           variant: robotState === 'THREAT_DETECTED' ? 'danger' : robotState === 'PROTECTED' ? 'success' : 'cyan',
@@ -174,9 +152,9 @@ export default function ScanPage() {
         }}
       />
 
-      {/* 2. Main Two-Column Flagship Experience */}
+      {/* 2. Top Interactive Scanner & AI Robot Console */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left 7 Columns: Interactive Scanner Console & Results */}
+        {/* Left 7 Columns: Scanner Input Card */}
         <div className="lg:col-span-7 space-y-6">
           <GlassCard className="p-6 sm:p-7 space-y-5">
             {/* Mode Tabs */}
@@ -307,148 +285,10 @@ export default function ScanPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* 4. Complete Threat Result Experience */}
-            <AnimatePresence>
-              {scanState === 'completed' && scanResult && (
-                <motion.div
-                  ref={resultRef}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.4 }}
-                  className="mt-6 pt-6 border-t border-border/60 space-y-6"
-                >
-                  {/* Top Result Banner */}
-                  <div className={`p-6 rounded-2xl border ${
-                    scanResult.threatLevel === 'safe'
-                      ? 'bg-gradient-to-r from-surface-2 via-cyber-success/10 to-surface-2 border-cyber-success/40'
-                      : scanResult.threatLevel === 'adversarial'
-                      ? 'bg-gradient-to-r from-surface-2 via-cyber-violet/15 to-surface-2 border-cyber-violet/50 shadow-glass-glow'
-                      : 'bg-gradient-to-r from-surface-2 via-cyber-danger/15 to-surface-2 border-cyber-danger/50 shadow-danger-glow'
-                  }`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-5 border-b border-border/60">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3.5 rounded-2xl border ${
-                          scanResult.threatLevel === 'safe'
-                            ? 'bg-cyber-success/20 border-cyber-success/40 text-cyber-success'
-                            : scanResult.threatLevel === 'adversarial'
-                            ? 'bg-cyber-violet/20 border-cyber-violet/40 text-purple-300'
-                            : 'bg-cyber-danger/20 border-cyber-danger/40 text-cyber-danger'
-                        }`}>
-                          {scanResult.threatLevel === 'safe' ? (
-                            <ShieldCheck className="w-8 h-8" />
-                          ) : (
-                            <ShieldAlert className="w-8 h-8" />
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-extrabold text-text">{scanResult.verdict}</h3>
-                            <Badge
-                              variant={
-                                scanResult.threatLevel === 'safe'
-                                  ? 'success'
-                                  : scanResult.threatLevel === 'adversarial'
-                                  ? 'violet'
-                                  : 'danger'
-                              }
-                              size="sm"
-                            >
-                              DEMO RESULT
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-text-muted mt-1">
-                            Status: <span className="font-mono font-bold text-text">THREAT ASSESSMENT — SIMULATION</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Circular Gauge */}
-                      <ScanConfidenceGauge
-                        confidence={scanResult.confidence}
-                        verdict={scanResult.verdict}
-                        severity={scanResult.severity}
-                      />
-                    </div>
-
-                    {/* Detected Threat Signals */}
-                    <div className="pt-4 space-y-2">
-                      <h4 className="text-xs font-mono uppercase text-text-muted font-bold flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-cyber-cyan" />
-                        <span>Detected Security Signals (Demo)</span>
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {scanResult.signals.map((sig, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-surface/70 border border-border/70 text-xs text-text-muted"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyber-cyan flex-shrink-0" />
-                            <span className="truncate">{sig}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Token Evidence Highlights */}
-                  <ThreatHighlights
-                    tokens={scanResult.tokens}
-                    isSafe={scanResult.threatLevel === 'safe'}
-                  />
-
-                  {/* AI Explanation Cards */}
-                  <AIExplanationCards explanations={scanResult.explanations} />
-
-                  {/* Action Recommendation */}
-                  <RecommendationBox
-                    recommendation={scanResult.recommendation}
-                    isSafe={scanResult.threatLevel === 'safe'}
-                    isAdversarial={scanResult.threatLevel === 'adversarial'}
-                  />
-
-                  {/* Result Action Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border/60">
-                    <div className="flex items-center gap-2">
-                      <GlowButton
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleStartScan}
-                        leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
-                      >
-                        Run Again
-                      </GlowButton>
-
-                      <GlowButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSaveToHistory}
-                        leftIcon={savedToHistory ? <Check className="w-3.5 h-3.5 text-cyber-success" /> : <Bookmark className="w-3.5 h-3.5" />}
-                      >
-                        {savedToHistory ? 'Saved in Local History' : 'Save to History'}
-                      </GlowButton>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <GlowButton
-                        variant="primary"
-                        size="sm"
-                        onClick={handleTestRobustness}
-                        rightIcon={<FlaskConical className="w-3.5 h-3.5 ml-1" />}
-                      >
-                        Test in Robustness Lab →
-                      </GlowButton>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </GlassCard>
         </div>
 
-        {/* Right 5 Columns: 3D AI Cyber Robot, Status & Conceptual Architecture */}
+        {/* Right 5 Columns: 3D AI Cyber Robot, Status & Architecture */}
         <div className="lg:col-span-5 space-y-6">
           {/* 3D Cyber Robot Canvas */}
           <GlassCard className="p-4 sm:p-5 relative overflow-hidden flex flex-col items-center">
@@ -476,12 +316,11 @@ export default function ScanPage() {
               </span>
             </div>
 
-            {/* Interactive 3D Robot */}
+            {/* Interactive 3D Robot Canvas */}
             <div className="w-full h-[360px] sm:h-[400px]">
               <RobotSceneContainer state={robotState} />
             </div>
 
-            {/* Micro Instruction */}
             <p className="text-[10px] font-mono text-text-muted text-center pt-2">
               DRAG TO ROTATE 3D ROBOT • SYNCHRONIZED WITH SCAN PIPELINE
             </p>
@@ -509,6 +348,29 @@ export default function ScanPage() {
             </div>
           </GlassCard>
         </div>
+      </div>
+
+      {/* 3. Phase 5 Flagship Forensic Investigation Workspace (Appears on scan completion) */}
+      <div ref={resultRef}>
+        <AnimatePresence>
+          {scanState === 'completed' && scanResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="mt-8"
+            >
+              <GlassCard className="p-6 sm:p-8 space-y-6">
+                <ForensicWorkspace
+                  result={scanResult}
+                  onRunAgain={handleStartScan}
+                  onTabChange={handleForensicTabChange}
+                />
+              </GlassCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </PageContainer>
   );

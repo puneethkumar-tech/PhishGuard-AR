@@ -22,16 +22,23 @@ export const AICyberRobot: React.FC<AICyberRobotProps> = ({ state }) => {
   const stateColor = useMemo(() => {
     switch (state) {
       case 'THREAT_DETECTED':
-        return new THREE.Color('#ef4444'); // Crimson / Red
+      case 'PERTURBING':
+        return new THREE.Color('#ef4444'); // Crimson / Red alert
       case 'PROTECTED':
-        return new THREE.Color('#10b981'); // Emerald / Green
+      case 'RECOVERING':
+        return new THREE.Color('#10b981'); // Emerald / Green defense
       case 'ANALYZING':
-        return new THREE.Color('#8b5cf6'); // Violet
+      case 'ROBUSTNESS_CHECK':
+      case 'DEFENDING':
+        return new THREE.Color('#8b5cf6'); // Violet computation
       case 'SCANNING':
+      case 'ATTACK_CONFIGURING':
+        return new THREE.Color('#38bdf8'); // Sky blue focus
+      case 'LAB_READY':
       case 'EXPLAINING':
       case 'IDLE':
       default:
-        return new THREE.Color('#06b6d4'); // Cyan
+        return new THREE.Color('#06b6d4'); // Cyan baseline
     }
   }, [state]);
 
@@ -55,11 +62,13 @@ export const AICyberRobot: React.FC<AICyberRobotProps> = ({ state }) => {
 
     // 1. Root gentle floating & breathing motion
     if (groupRef.current) {
-      const floatAmp = state === 'THREAT_DETECTED' ? 0.08 : 0.05;
-      const floatSpeed = state === 'SCANNING' || state === 'ANALYZING' ? 2.5 : 1.5;
+      const isAlert = state === 'THREAT_DETECTED' || state === 'PERTURBING';
+      const isFast = state === 'SCANNING' || state === 'ANALYZING' || state === 'DEFENDING';
+      const floatAmp = isAlert ? 0.08 : 0.05;
+      const floatSpeed = isFast ? 2.5 : 1.5;
       groupRef.current.position.y = Math.sin(time * floatSpeed) * floatAmp;
 
-      if (state === 'THREAT_DETECTED') {
+      if (isAlert) {
         // Minor alert tension vibration
         groupRef.current.position.x = Math.sin(time * 25) * 0.015;
       } else {

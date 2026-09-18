@@ -46,7 +46,7 @@ export default function HistoryPage() {
         verdict: scan.verdict as any,
         confidence: scan.confidenceText,
         threatLevel: scan.threatLevel,
-        indicators: scan.signals,
+        indicators: scan.signals.map((s) => (typeof s === 'string' ? s : `${s.signal}: ${s.description}`)),
         recommendation: scan.recommendation,
       }));
 
