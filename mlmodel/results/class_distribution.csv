@@ -1,0 +1,4 @@
+split,total_samples,benign_samples,benign_pct,threat_samples,threat_pct
+merged,162512,78579,48.35,83933,51.65
+train,130009,62863,48.35,67146,51.65
+test,32503,15716,48.35,16787,51.65
