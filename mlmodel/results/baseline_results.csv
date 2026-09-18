@@ -1,0 +1,2 @@
+model_name,train_samples,test_samples,threshold,accuracy,precision,recall,f1,macro_f1,weighted_f1,roc_auc,tn,fp,fn,tp
+TF-IDF + Calibrated LinearSVC,130009,32503,0.5499999999999999,0.9962,0.9968,0.9959,0.9964,0.9962,0.9962,0.9999,15662,54,68,16719
