@@ -191,3 +191,139 @@ def test_scan_endpoint_with_active_mock_runner(client, auth_headers):
     finally:
         # Reset to ensure other tests aren't polluted
         active_model_service.unload()
+
+
+def test_model_service_nan_and_infinity_score():
+    """ModelService sanitizes NaN and Infinity floats to None to protect JSON compliance."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={"verdict": "clean", "threat_type": "benign", "score": float("nan")})
+    svc.set_runner(runner)
+    result = svc.predict("Hello")
+    assert result["score"] is None
+
+    runner2 = DummyMockRunner(output={"verdict": "clean", "threat_type": "benign", "score": float("inf")})
+    svc.set_runner(runner2)
+    result2 = svc.predict("Hello")
+    assert result2["score"] is None
+
+
+def test_model_service_out_of_bounds_confidence_score():
+    """When confidence score is outside [0.0, 1.0], it is automatically tagged as 'raw_score'."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={"verdict": "malicious", "threat_type": "phishing", "score": 12.5, "score_type": "confidence"})
+    svc.set_runner(runner)
+    result = svc.predict("Suspicious URL")
+    assert result["score"] == 12.5
+    assert result["score_type"] == "raw_score"
+
+
+def test_model_service_casing_and_whitespace_normalization():
+    """ModelService lowercases and trims verdict and threat_type strings."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={
+        "verdict": "  PHISHING  ",
+        "threat_type": "  CREDENTIAL_HARVESTING\n",
+        "score": 0.95,
+        "score_type": "CONFIDENCE",
+    })
+    svc.set_runner(runner)
+    result = svc.predict("Suspicious text")
+    assert result["verdict"] == "phishing"
+    assert result["threat_type"] == "credential_harvesting"
+    assert result["score_type"] == "confidence"
+
+
+def test_model_service_invalid_score_type_fallback():
+    """Unrecognized score_type values default safely to 'confidence'."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={
+        "verdict": "clean",
+        "threat_type": "benign",
+        "score": 0.12,
+        "score_type": "arbitrary_custom_metric",
+    })
+    svc.set_runner(runner)
+    result = svc.predict("Clean text")
+    assert result["score_type"] == "confidence"
+
+
+def test_model_service_invalid_string_score_sanitized_to_none():
+    """Unparseable string scores are safely converted to None."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={
+        "verdict": "clean",
+        "threat_type": "benign",
+        "score": "not_a_valid_float",
+    })
+    svc.set_runner(runner)
+    result = svc.predict("Clean text")
+    assert result["score"] is None
+
+
+def test_model_service_indicators_and_metadata_sanitization():
+    """Indicators list is filtered of empty strings and metadata is safely preserved."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={
+        "verdict": "suspicious",
+        "threat_type": "scam",
+        "indicators": [" urgent_call ", "", "  ", "fake_brand"],
+        "metadata": {"custom_flag": True},
+    })
+    svc.set_runner(runner)
+    result = svc.predict("Claim your prize")
+    assert result["indicators"] == ["urgent_call", "fake_brand"]
+    assert result["metadata"] == {"custom_flag": True}
+
+
+def test_model_service_negative_probability_demoted_to_raw_score():
+    """Negative score marked as 'probability' is demoted to 'raw_score'."""
+    svc = ModelService()
+    runner = DummyMockRunner(output={
+        "verdict": "phishing",
+        "threat_type": "phishing",
+        "score": -2.4,
+        "score_type": "probability",
+    })
+    svc.set_runner(runner)
+    result = svc.predict("Bad text")
+    assert result["score"] == -2.4
+    assert result["score_type"] == "raw_score"
+
+
+def test_model_service_version_precedence():
+    """Model version from runner output is preferred if non-empty, otherwise falls back to service default."""
+    svc = ModelService(model_version="service-default-v1")
+    runner1 = DummyMockRunner(output={
+        "verdict": "clean",
+        "threat_type": "benign",
+        "model_version": "runner-specific-v2",
+    })
+    svc.set_runner(runner1)
+    result1 = svc.predict("Text 1")
+    assert result1["model_version"] == "runner-specific-v2"
+
+    runner2 = DummyMockRunner(output={
+        "verdict": "clean",
+        "threat_type": "benign",
+    })
+    svc.set_runner(runner2, version="service-default-v1")
+    result2 = svc.predict("Text 2")
+    assert result2["model_version"] == "service-default-v1"
+
+
+def test_scan_api_model_error_does_not_leak_paths_or_tracebacks(client, auth_headers):
+    """POST /api/scan on runtime ModelError returns generic error without leaking server stack trace."""
+    runner = DummyMockRunner(should_fail=True)
+    active_model_service.set_runner(runner)
+
+    try:
+        response = client.post("/api/scan", headers=auth_headers, json={"text": "Check this out"})
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["error"] == "model_error"
+        assert "Threat analysis failed" in data["message"]
+        # Ensure internal exception string and traceback are not leaked in the JSON payload
+        assert "Traceback" not in data["message"]
+        assert "Underlying runner crashed" not in data["message"]
+    finally:
+        active_model_service.unload()

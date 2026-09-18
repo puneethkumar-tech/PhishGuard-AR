@@ -18,12 +18,14 @@ def save_scan(user_id: int, text: str, result: dict) -> Scan:
 
 def get_user_scans(user_id: int, limit: int = 50, offset: int = 0) -> list[Scan]:
     """Retrieve scan history for a given user, ordered newest first."""
+    safe_limit = max(1, min(int(limit or 50), 100))
+    safe_offset = max(0, int(offset or 0))
     return (
         db.session.query(Scan)
         .filter(Scan.user_id == user_id)
         .order_by(Scan.created_at.desc())
-        .offset(offset)
-        .limit(min(limit, 100))
+        .offset(safe_offset)
+        .limit(safe_limit)
         .all()
     )
 

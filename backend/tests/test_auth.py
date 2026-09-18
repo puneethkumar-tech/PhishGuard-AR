@@ -104,3 +104,41 @@ def test_refresh_token_missing(client):
     """Calling refresh without authorization token returns 401."""
     response = client.post("/api/auth/refresh")
     assert response.status_code == 401
+
+def test_register_oversized_bounds(client):
+    """Registration fails when name > 120, email > 255, or password > 128 characters."""
+    # Oversized password
+    res_pw = client.post("/api/auth/register", json={
+        "name": "Normal Name",
+        "email": "normal@example.com",
+        "password": "A" * 129,
+    })
+    assert res_pw.status_code == 400
+    assert res_pw.get_json()["error"] == "validation_error"
+
+    # Oversized name
+    res_name = client.post("/api/auth/register", json={
+        "name": "N" * 121,
+        "email": "normal2@example.com",
+        "password": "ValidPassword123!",
+    })
+    assert res_name.status_code == 400
+    assert res_name.get_json()["error"] == "validation_error"
+
+    # Oversized email
+    res_email = client.post("/api/auth/register", json={
+        "name": "Normal Name",
+        "email": ("e" * 250) + "@example.com",
+        "password": "ValidPassword123!",
+    })
+    assert res_email.status_code == 400
+    assert res_email.get_json()["error"] == "validation_error"
+
+def test_login_oversized_bounds(client):
+    """Login safely rejects oversized credentials without computing expensive hashes."""
+    res = client.post("/api/auth/login", json={
+        "email": "normal@example.com",
+        "password": "A" * 129,
+    })
+    assert res.status_code == 401
+    assert res.get_json()["error"] == "invalid_credentials"

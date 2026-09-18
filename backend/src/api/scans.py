@@ -1,8 +1,10 @@
+import logging
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..services.model_service import ModelError, ModelService, ModelUnavailableError
 from ..services.scan_service import get_scan_by_id, get_user_scans, save_scan
 
+logger = logging.getLogger(__name__)
 scans_bp = Blueprint("scans", __name__, url_prefix="/api")
 
 model_service = ModelService()
@@ -11,14 +13,17 @@ model_service = ModelService()
 @jwt_required()
 def scan():
     """Submit a text sample for phishing / threat detection."""
-    data = request.get_json(silent=True) or {}
-    text = str(data.get("text", "")).strip()
+    raw_data = request.get_json(silent=True)
+    data = raw_data if isinstance(raw_data, dict) else {}
+    raw_text = data.get("text")
 
-    if not text:
+    if not isinstance(raw_text, str) or not raw_text.strip():
         return jsonify({
             "error": "validation_error",
             "message": "text is required",
         }), 400
+
+    text = raw_text.strip()
 
     if len(text) > 100_000:
         return jsonify({
@@ -29,14 +34,16 @@ def scan():
     try:
         result = model_service.predict(text)
     except ModelUnavailableError as exc:
+        logger.warning("Threat scan requested but model unavailable: %s", exc)
         return jsonify({
             "error": "model_unavailable",
-            "message": str(exc),
+            "message": "ML model is not available. Wait for Person A's model bundle.",
         }), 503
     except ModelError as exc:
+        logger.error("Threat scan inference error: %s", exc, exc_info=True)
         return jsonify({
             "error": "model_error",
-            "message": str(exc),
+            "message": "Threat analysis failed due to an internal model error.",
         }), 500
 
     scan_record = save_scan(int(get_jwt_identity()), text, result)

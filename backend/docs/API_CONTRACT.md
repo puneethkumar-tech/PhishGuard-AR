@@ -1,15 +1,47 @@
 # API Contract — PhishGuard-AR Backend
 
-## 1. System Health
+## 1. System Health & Readiness
 
 ### `GET /health`
-Public health status check.
+Liveness probe: returns `200 OK` as long as the backend server process is alive.
 
-**Response (200 OK):**
+- **Authentication:** None (Public)
+- **Response (200 OK):**
 ```json
 {
   "service": "phishguard-api",
   "status": "ok"
+}
+```
+
+### `GET /ready`
+Readiness probe: validates database connectivity and ML model availability.
+
+- **Authentication:** None (Public)
+- **Response (When DB connected & ML model active — 200 OK):**
+```json
+{
+  "service": "phishguard-api",
+  "ready": true,
+  "status": "ready",
+  "checks": {
+    "database": "connected",
+    "model": "loaded"
+  },
+  "model_version": "phishguard-v1.0"
+}
+```
+- **Response (When model is missing/unloaded — 503 Service Unavailable):**
+```json
+{
+  "service": "phishguard-api",
+  "ready": false,
+  "status": "model_unavailable",
+  "checks": {
+    "database": "connected",
+    "model": "unavailable"
+  },
+  "model_version": "not-loaded"
 }
 ```
 
@@ -20,7 +52,9 @@ Public health status check.
 ### `POST /api/auth/register`
 Register a new analyst account.
 
-**Request:**
+- **Authentication:** None (Public)
+- **Headers:** `Content-Type: application/json`
+- **Request Body:**
 ```json
 {
   "name": "Demo User",
@@ -28,78 +62,100 @@ Register a new analyst account.
   "password": "minimum-8-chars"
 }
 ```
-
-**Response (201 Created):**
+- **Response (201 Created):**
 ```json
 {
   "message": "registered successfully",
   "user_id": 1
 }
 ```
+- **Error Responses:**
+  - `400 Bad Request` (Validation Error):
+    ```json
+    {
+      "error": "validation_error",
+      "message": "Name (max 120 chars), a valid email (max 255 chars), and a password of at least 8 characters (max 128) are required."
+    }
+    ```
+  - `409 Conflict` (Duplicate Email):
+    ```json
+    {
+      "error": "conflict",
+      "message": "registration failed"
+    }
+    ```
 
 ### `POST /api/auth/login`
-Authenticate with email and password.
+Authenticate with email and password to obtain JWT tokens.
 
-**Request:**
+- **Authentication:** None (Public)
+- **Headers:** `Content-Type: application/json`
+- **Request Body:**
 ```json
 {
   "email": "demo@example.com",
   "password": "minimum-8-chars"
 }
 ```
-
-**Response (200 OK):**
+- **Response (200 OK):**
 ```json
 {
-  "access_token": "eyJhbGci...",
-  "refresh_token": "eyJhbGci..."
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+- **Error Responses:**
+  - `401 Unauthorized` (Invalid credentials or missing fields):
+    ```json
+    {
+      "error": "invalid_credentials",
+      "message": "invalid email or password"
+    }
+    ```
 
 ### `POST /api/auth/refresh`
 Exchange a valid refresh token for a fresh access token.
 
-**Headers:**
-```text
-Authorization: Bearer <refresh_token>
-```
-
-**Response (200 OK):**
+- **Authentication:** Bearer Refresh Token
+- **Headers:**
+  ```text
+  Authorization: Bearer <refresh_token>
+  ```
+- **Response (200 OK):**
 ```json
 {
-  "access_token": "eyJhbGci..."
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+- **Error Responses:**
+  - `401 Unauthorized` (Missing or invalid refresh token):
+    ```json
+    {
+      "error": "unauthorized",
+      "message": "Authorization token is missing or invalid."
+    }
+    ```
 
 ---
 
 ## 3. Threat Scanning & History
 
 ### `POST /api/scan`
-Submit text for phishing analysis.
+Submit text for phishing and cyber threat analysis.
 
-**Headers:**
-```text
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
-
-**Request:**
+- **Authentication:** Bearer Access Token
+- **Headers:**
+  ```text
+  Authorization: Bearer <access_token>
+  Content-Type: application/json
+  ```
+- **Request Body:**
 ```json
 {
-  "text": "Urgent: verify your account security credentials immediately."
+  "text": "Urgent: verify your account security credentials immediately at https://bank-login.example"
 }
 ```
-
-**Response (Until Person A integrates model bundle — 503 Service Unavailable):**
-```json
-{
-  "error": "model_unavailable",
-  "message": "ML model is not available. Wait for Person A's model bundle."
-}
-```
-
-**Response (When model is active — 200 OK):**
+- **Response (When model is active — 200 OK):**
 ```json
 {
   "scan_id": 1,
@@ -107,7 +163,7 @@ Content-Type: application/json
   "threat_type": "phishing",
   "score": 0.94,
   "score_type": "confidence",
-  "model_version": "v1.0",
+  "model_version": "phishguard-v1.0",
   "indicators": [
     "urgent_action",
     "suspicious_link"
@@ -118,20 +174,55 @@ Content-Type: application/json
   }
 }
 ```
+- **Error Responses:**
+  - `400 Bad Request` (Empty text or missing text field):
+    ```json
+    {
+      "error": "validation_error",
+      "message": "text is required"
+    }
+    ```
+  - `401 Unauthorized` (Missing or invalid access token):
+    ```json
+    {
+      "error": "unauthorized",
+      "message": "Authorization token is missing or invalid."
+    }
+    ```
+  - `413 Payload Too Large` (Text exceeds 100,000 characters):
+    ```json
+    {
+      "error": "payload_too_large",
+      "message": "text is too long"
+    }
+    ```
+  - `500 Internal Server Error` (Model inference or runtime failure):
+    ```json
+    {
+      "error": "model_error",
+      "message": "Threat analysis failed due to an internal model error."
+    }
+    ```
+  - `503 Service Unavailable` (ML model bundle not yet loaded):
+    ```json
+    {
+      "error": "model_unavailable",
+      "message": "ML model is not available. Wait for Person A's model bundle."
+    }
+    ```
 
 ### `GET /api/scans`
 List scan records submitted by the authenticated user (newest first).
 
-**Headers:**
-```text
-Authorization: Bearer <access_token>
-```
-
-**Query Parameters:**
-- `limit` (default: 50, max: 100)
-- `offset` (default: 0)
-
-**Response (200 OK):**
+- **Authentication:** Bearer Access Token
+- **Headers:**
+  ```text
+  Authorization: Bearer <access_token>
+  ```
+- **Query Parameters:**
+  - `limit` (optional, integer, default: 50, clamped: 1..100)
+  - `offset` (optional, integer, default: 0, min: 0)
+- **Response (200 OK):**
 ```json
 {
   "scans": [
@@ -142,7 +233,7 @@ Authorization: Bearer <access_token>
       "verdict": "malicious",
       "threat_type": "phishing",
       "score": 0.94,
-      "score_type": "probability",
+      "score_type": "confidence",
       "model_version": "v1.0",
       "created_at": "2026-09-18T08:30:00+00:00"
     }
@@ -150,16 +241,24 @@ Authorization: Bearer <access_token>
   "count": 1
 }
 ```
+- **Error Responses:**
+  - `401 Unauthorized`:
+    ```json
+    {
+      "error": "unauthorized",
+      "message": "Authorization token is missing or invalid."
+    }
+    ```
 
 ### `GET /api/scans/<scan_id>`
 Retrieve a specific scan record owned by the authenticated user.
 
-**Headers:**
-```text
-Authorization: Bearer <access_token>
-```
-
-**Response (200 OK):**
+- **Authentication:** Bearer Access Token
+- **Headers:**
+  ```text
+  Authorization: Bearer <access_token>
+  ```
+- **Response (200 OK):**
 ```json
 {
   "id": 1,
@@ -168,16 +267,23 @@ Authorization: Bearer <access_token>
   "verdict": "malicious",
   "threat_type": "phishing",
   "score": 0.94,
-  "score_type": "probability",
+  "score_type": "confidence",
   "model_version": "v1.0",
   "created_at": "2026-09-18T08:30:00+00:00"
 }
 ```
-
-**Error (404 Not Found):**
-```json
-{
-  "error": "not_found",
-  "message": "Scan 1 was not found or access is denied."
-}
-```
+- **Error Responses:**
+  - `401 Unauthorized`:
+    ```json
+    {
+      "error": "unauthorized",
+      "message": "Authorization token is missing or invalid."
+    }
+    ```
+  - `404 Not Found` (Scan non-existent or owned by a different user):
+    ```json
+    {
+      "error": "not_found",
+      "message": "Scan 1 was not found or access is denied."
+    }
+    ```

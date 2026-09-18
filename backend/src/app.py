@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from flask import Flask, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 from .config import DevelopmentConfig, config_by_name
@@ -6,6 +8,8 @@ from .extensions import bcrypt, db, jwt
 from .api.auth import auth_bp
 from .api.health import health_bp
 from .api.scans import scans_bp
+
+logger = logging.getLogger("phishguard.api")
 
 def create_app(config_class=None) -> Flask:
     """Application factory for PhishGuard-AR backend."""
@@ -52,9 +56,10 @@ def create_app(config_class=None) -> Flask:
             "message": "The token has expired. Please refresh or log in again.",
         }), 401
 
-    # CORS & Security headers (Environment allowlist based)
+    # CORS, timing & Security headers (Environment allowlist based)
     @app.before_request
     def handle_cors_preflight():
+        request._req_start_time = time.perf_counter()
         if request.method == "OPTIONS":
             origin = request.headers.get("Origin")
             allowed_origins = app.config.get("CORS_ALLOWED_ORIGINS", [])
@@ -64,6 +69,7 @@ def create_app(config_class=None) -> Flask:
                 response.headers["Access-Control-Allow-Credentials"] = "true"
                 response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
                 response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+                response.headers["Access-Control-Max-Age"] = "86400"
                 return response
 
     @app.after_request
@@ -80,6 +86,14 @@ def create_app(config_class=None) -> Flask:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none';"
+
+        # Safe access logging (does not log request body, passwords, or tokens)
+        start_time = getattr(request, "_req_start_time", None)
+        if start_time is not None:
+            latency_ms = (time.perf_counter() - start_time) * 1000
+            logger.info("%s %s -> %d (%.2fms)", request.method, request.path, response.status_code, latency_ms)
+
         return response
 
     # Safe error handlers (no sensitive data or stack traces leaked)

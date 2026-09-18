@@ -15,15 +15,24 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 @auth_bp.post("/register")
 def register():
     """Register a new user analyst."""
-    data = request.get_json(silent=True) or {}
-    name = str(data.get("name", "")).strip()
-    email = str(data.get("email", "")).strip().lower()
-    password = str(data.get("password", ""))
+    raw_data = request.get_json(silent=True)
+    data = raw_data if isinstance(raw_data, dict) else {}
+    name = str(data.get("name", "")).strip() if isinstance(data.get("name"), str) else ""
+    email = str(data.get("email", "")).strip().lower() if isinstance(data.get("email"), str) else ""
+    password = data.get("password") if isinstance(data.get("password"), str) else ""
 
-    if not name or not email or "@" not in email or len(password) < 8:
+    if (
+        not name
+        or len(name) > 120
+        or not email
+        or len(email) > 255
+        or "@" not in email
+        or len(password) < 8
+        or len(password) > 128
+    ):
         return jsonify({
             "error": "validation_error",
-            "message": "Name, a valid email, and a password of at least 8 characters are required.",
+            "message": "Name (max 120 chars), a valid email (max 255 chars), and a password of at least 8 characters (max 128) are required.",
         }), 400
 
     exists = db.session.query(User).filter(func.lower(User.email) == email).first()
@@ -48,11 +57,12 @@ def register():
 @auth_bp.post("/login")
 def login():
     """Authenticate a user and return access and refresh JWT tokens."""
-    data = request.get_json(silent=True) or {}
-    email = str(data.get("email", "")).strip().lower()
-    password = str(data.get("password", ""))
+    raw_data = request.get_json(silent=True)
+    data = raw_data if isinstance(raw_data, dict) else {}
+    email = str(data.get("email", "")).strip().lower() if isinstance(data.get("email"), str) else ""
+    password = data.get("password") if isinstance(data.get("password"), str) else ""
 
-    if not email or not password:
+    if not email or len(email) > 255 or not password or len(password) > 128:
         return jsonify({
             "error": "invalid_credentials",
             "message": "invalid email or password",

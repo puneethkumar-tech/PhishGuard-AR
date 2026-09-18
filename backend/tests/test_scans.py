@@ -1,3 +1,4 @@
+import pytest
 from src.services.scan_service import save_scan
 from src.models import User
 from src.extensions import bcrypt, db
@@ -117,3 +118,45 @@ def test_get_single_scan_forbidden_for_other_user(app, client, registered_user, 
     # Access using first user's auth_headers should return 404 (not expose other user's record)
     response = client.get(f"/api/scans/{other_scan_id}", headers=auth_headers)
     assert response.status_code == 404
+
+def test_list_scans_pagination_bounds(app, client, registered_user, auth_headers):
+    """GET /api/scans handles non-standard, negative, or excessive limit and offset values safely."""
+    with app.app_context():
+        for i in range(5):
+            save_scan(
+                user_id=registered_user["id"],
+                text=f"Scan record {i}",
+                result={
+                    "verdict": "clean",
+                    "threat_type": "benign",
+                    "score": 0.1,
+                    "score_type": "confidence",
+                    "model_version": "test-v1",
+                },
+            )
+
+    # Negative limit/offset are sanitized to valid values
+    response = client.get("/api/scans?limit=-5&offset=-1", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["count"] >= 1
+
+    # Custom limit and offset
+    response = client.get("/api/scans?limit=2&offset=1", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["count"] == 2
+
+
+@pytest.mark.parametrize("invalid_text", [
+    123,
+    True,
+    False,
+    ["an", "array"],
+    {"nested": "object"},
+])
+def test_scan_non_string_types(client, auth_headers, invalid_text):
+    """POST /api/scan rejects non-string types for 'text' parameter with 400 validation_error."""
+    response = client.post("/api/scan", headers=auth_headers, json={"text": invalid_text})
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "validation_error"

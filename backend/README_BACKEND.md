@@ -35,6 +35,7 @@ backend/
     ├── test_auth.py          # Registration, login, validation, and token refresh tests
     ├── test_config.py        # Config environments & production validation tests
     ├── test_health.py        # Health status, security headers & CORS tests
+    ├── test_integration.py   # End-to-end API integration, token rotation & multi-user isolation
     ├── test_model_service.py # ModelService lifecycle, mock runner & validation tests
     └── test_scans.py         # Scan endpoints, model unavailable 503, history tests
 ```
@@ -107,12 +108,13 @@ The test suite runs entirely in-memory (`sqlite:///:memory:`) using isolated fix
 pytest -v
 ```
 
-All 36 automated unit and integration tests run across:
-- `tests/test_auth.py`: Registration, duplicate detection, password length validation, login, and token refresh.
+All 66 automated unit and integration tests run across:
+- `tests/test_auth.py`: Registration, duplicate detection, input boundary checks (DoS protection), login, and token refresh.
 - `tests/test_config.py`: Environment classes and production secret validation.
-- `tests/test_health.py`: Health check, defensive headers (`X-Content-Type-Options`, `X-Frame-Options`), and CORS allowlist enforcement.
-- `tests/test_model_service.py`: ModelService initialization, lazy-loading, missing model path handling, PredictionResult schema normalization, and mock runner execution.
-- `tests/test_scans.py`: Authorization enforcement, payload limits (100k chars), honest 503 `model_unavailable` handling, scan history listing, and record ownership isolation.
+- `tests/test_health.py`: Health check (liveness), readiness check (`/ready`), defensive headers (`X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`), and CORS allowlist enforcement.
+- `tests/test_integration.py`: End-to-end auth rotation flows, invalid payload matrices, unsupported content-types, multi-user scan isolation, and readiness lifecycles.
+- `tests/test_model_service.py`: ModelService initialization, lazy-loading, missing model path handling, PredictionResult schema normalization, NaN/Inf score protection, and mock runner execution.
+- `tests/test_scans.py`: Authorization enforcement, payload limits (100k chars), non-string type rejection, honest 503 `model_unavailable` handling, scan history listing, record ownership isolation, and pagination boundary sanitization.
 
 ---
 
@@ -122,7 +124,7 @@ All 36 automated unit and integration tests run across:
 flask --app src.app run --port 5000
 ```
 
-Verify service health:
+Verify service liveness:
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:5000/health"
 ```
@@ -134,10 +136,30 @@ Output:
 }
 ```
 
+Verify service readiness:
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/ready"
+```
+Output (when model is not yet loaded):
+```json
+{
+  "service": "phishguard-api",
+  "ready": false,
+  "status": "model_unavailable",
+  "checks": {
+    "database": "connected",
+    "model": "unavailable"
+  },
+  "model_version": "not-loaded"
+}
+```
+
 ---
 
-## 🔒 Security Principles
+## 🔒 Security Principles & Hardening
 
-1. **No Fake Metrics**: The threat scanning endpoint will safely respond with `503 Service Unavailable: model_unavailable` until the ML Engineer (Person A) delivers the trained model artifacts.
-2. **CORS Allowlist**: Cross-Origin requests are checked against `CORS_ALLOWED_ORIGINS` to protect APIs from unauthorized browser domains.
-3. **Defense in Depth**: Password hashes use Bcrypt; generic error messages prevent user enumeration; all tokens expire cleanly.
+1. **No Fake Metrics**: The threat scanning endpoint safely responds with `503 Service Unavailable: model_unavailable` until the ML Engineer (Person A) delivers the trained model artifacts.
+2. **CORS Allowlist**: Cross-Origin requests are checked against `CORS_ALLOWED_ORIGINS` to protect APIs from unauthorized browser domains; preflight `OPTIONS` requests are cached (`Access-Control-Max-Age: 86400`).
+3. **Defense in Depth**: Password hashes use Bcrypt; generic error messages prevent user enumeration; all tokens expire cleanly; defensive headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`) are attached to all responses.
+4. **Input Length Limits & DoS Protection**: Name (max 120 chars), email (max 255 chars), and password (8-128 chars) prevent CPU exhaustion against bcrypt.
+5. **Safe Access Logging**: Request paths, methods, status codes, and durations are logged without recording request bodies, passwords, or Authorization tokens.

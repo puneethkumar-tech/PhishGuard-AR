@@ -13,6 +13,7 @@ Strict Project Principles:
 from __future__ import annotations
 
 import logging
+import math
 import os
 from pathlib import Path
 from typing import Any, Optional, Protocol, TypedDict, runtime_checkable
@@ -157,6 +158,9 @@ class ModelService:
             logger.info("Loading model artifact from %s", resolved_path)
             self._runner = self._instantiate_runner(resolved_path)
             logger.info("Model loaded successfully (version: %s)", self._model_version)
+        except ModelUnavailableError:
+            self._runner = None
+            raise
         except Exception as exc:
             self._runner = None
             raise InvalidModelArtifactError(
@@ -210,28 +214,48 @@ class ModelService:
         verdict = raw.get("verdict")
         threat_type = raw.get("threat_type")
 
-        if not verdict or not threat_type:
+        if not verdict or not threat_type or not str(verdict).strip() or not str(threat_type).strip():
             raise ModelError(
                 f"Model output missing required fields ('verdict', 'threat_type'). Got: {list(raw.keys())}"
             )
+
+        verdict_str = str(verdict).strip().lower()
+        threat_type_str = str(threat_type).strip().lower()
 
         score = raw.get("score")
         if score is not None:
             try:
                 score = float(score)
+                if not math.isfinite(score):
+                    score = None
             except (ValueError, TypeError):
                 score = None
 
+        raw_score_type = str(raw.get("score_type", "confidence")).strip().lower()
+        if raw_score_type not in ("confidence", "probability", "raw_score"):
+            score_type = "confidence"
+        else:
+            score_type = raw_score_type
+
+        if score is not None and score_type in ("confidence", "probability"):
+            if score < 0.0 or score > 1.0:
+                score_type = "raw_score"
+
+        raw_version = raw.get("model_version")
+        version_str = str(raw_version).strip() if raw_version and str(raw_version).strip() else self._model_version
+
         result: PredictionResult = {
-            "verdict": str(verdict),
-            "threat_type": str(threat_type),
+            "verdict": verdict_str,
+            "threat_type": threat_type_str,
             "score": score,
-            "score_type": str(raw.get("score_type", "confidence")),
-            "model_version": str(raw.get("model_version", self._model_version)),
+            "score_type": score_type,
+            "model_version": version_str,
         }
 
         if "indicators" in raw and isinstance(raw["indicators"], list):
-            result["indicators"] = [str(i) for i in raw["indicators"]]
+            result["indicators"] = [
+                str(i).strip() for i in raw["indicators"] if str(i).strip()
+            ]
 
         if "metadata" in raw and isinstance(raw["metadata"], dict):
             result["metadata"] = raw["metadata"]
